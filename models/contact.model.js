@@ -1,0 +1,32 @@
+// models/contact.model.js
+// Mongoose model for contacts collection
+
+const mongoose = require("mongoose");
+
+const contactSchema = new mongoose.Schema(
+  {
+    firstname: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    lastname: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      lowercase: true,
+    },
+  },
+  {
+    timestamps: true, // createdAt, updatedAt
+  }
+);
+
+const Contact = mongoose.model("Contact", contactSchema);
+
+module.exports = Contact;
