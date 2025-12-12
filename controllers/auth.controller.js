@@ -1,81 +1,132 @@
 // controllers/auth.controller.js
-// Authentication: login using email and password
+// Authentication logic: signup, signin, signout, current user
 
-const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
 
-const login = async (req, res) => {
+// Helper: generate JWT token
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user._id, role: user.role },
+    process.env.JWT_SECRET,
+    { expiresIn: "1d" } // token valid for 1 day
+  );
+};
+
+// POST /api/auth/signup
+// Create new user account (normal user by default)
+const signup = async (req, res) => {
   try {
-    const body = req.body && typeof req.body === "object" ? req.body : {};
-    const email = body.email;
-    const password = body.password;
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res
+        .status(400)
+        .json({ message: "Name, email and password are required" });
+    }
+
+    const existing = await User.findOne({ email });
+    if (existing) {
+      return res
+        .status(409)
+        .json({ message: "User already exists with this email" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role: "user", // default user role
+    });
+
+    const token = generateToken(user);
+
+    res.status(201).json({
+      message: "User registered successfully",
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (error) {
+    console.error("Signup error:", error.message);
+    res.status(500).json({ message: "Server error during signup" });
+  }
+};
+
+// POST /api/auth/signin
+// Login user and return JWT token
+const signin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
 
     if (!email || !password) {
       return res
         .status(400)
-        .json({ message: "email and password are required" });
+        .json({ message: "Email and password are required" });
     }
 
     const user = await User.findOne({ email });
 
     if (!user) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(401).json({ message: "Invalid email or password" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Generate JWT token
-    const payload = {
-      userId: user._id,
-      email: user.email,
-    };
-
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
-    const userObj = user.toObject();
-    delete userObj.password;
+    const token = generateToken(user);
 
     res.json({
-      message: "Login successful",
+      message: "Signin successful",
       token,
-      user: userObj,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
     });
   } catch (error) {
-    console.error("Error during login:", error);
-    res.status(500).json({ message: "Login failed" });
+    console.error("Signin error:", error.message);
+    res.status(500).json({ message: "Server error during signin" });
   }
 };
 
-// Simple logout (client should delete token)
-const logout = (req, res) => {
-  res.json({ message: "Logout successful (delete token on client side)" });
+// GET /api/auth/signout
+// For JWT we simply tell front-end to delete the token
+const signout = (req, res) => {
+  return res.json({
+    message: "Signout successful. Please remove token on client side.",
+  });
 };
 
+// GET /api/auth/me (protected)
 const getCurrentUser = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const user = await User.findById(userId).select("-password");
-
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    res.json(user);
-  } catch (error) {
-    console.error("Error getting current user:", error);
-    res.status(500).json({ message: "Failed to get current user" });
+  if (!req.user) {
+    return res.status(401).json({ message: "Not authenticated" });
   }
+
+  res.json({
+    id: req.user._id,
+    name: req.user.name,
+    email: req.user.email,
+    role: req.user.role,
+  });
 };
 
 module.exports = {
-  login,
-  logout,
+  signup,
+  signin,
+  signout,
   getCurrentUser,
 };

@@ -13,24 +13,18 @@ const {
   deleteAllContacts,
 } = require("../controllers/contact.controller");
 
+const { protect, adminOnly } = require("../middleware/authMiddleware");
+
 // Base path: /api/contacts
 
-// Get all contacts
+// Public read
 router.get("/", getAllContacts);
-
-// Get a single contact by id
 router.get("/:id", getContactById);
 
-// Create a new contact
-router.post("/", createContact);
-
-// Update a contact by id
-router.put("/:id", updateContactById);
-
-// Delete a contact by id
-router.delete("/:id", deleteContactById);
-
-// Delete all contacts
-router.delete("/", deleteAllContacts);
+// Admin-only write
+router.post("/", protect, adminOnly, createContact);
+router.put("/:id", protect, adminOnly, updateContactById);
+router.delete("/:id", protect, adminOnly, deleteContactById);
+router.delete("/", protect, adminOnly, deleteAllContacts);
 
 module.exports = router;

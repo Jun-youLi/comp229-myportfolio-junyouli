@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const auth = require("../middleware/authMiddleware");
+
 const {
   createQualification,
   getAllQualifications,
@@ -10,14 +10,16 @@ const {
   deleteAllQualifications,
 } = require("../controllers/qualification.controller");
 
+const { protect, adminOnly } = require("../middleware/authMiddleware");
+
 // Public read
 router.get("/", getAllQualifications);
 router.get("/:id", getQualificationById);
 
-// Protected write
-router.post("/", auth, createQualification);
-router.put("/:id", auth, updateQualificationById);
-router.delete("/:id", auth, deleteQualificationById);
-router.delete("/", auth, deleteAllQualifications);
+// Admin-only write
+router.post("/", protect, adminOnly, createQualification);
+router.put("/:id", protect, adminOnly, updateQualificationById);
+router.delete("/:id", protect, adminOnly, deleteQualificationById);
+router.delete("/", protect, adminOnly, deleteAllQualifications);
 
 module.exports = router;

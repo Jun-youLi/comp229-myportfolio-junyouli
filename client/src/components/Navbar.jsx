@@ -1,30 +1,63 @@
-// src/components/Navbar.jsx
-// Top navigation bar with custom logo and links
+// client/src/components/Navbar.jsx
 
+import React from "react";
 import { Link, NavLink } from "react-router-dom";
-import "../styles/Navbar.css";
+import "../styles/Navbar.css";   // <-- add this line
 
-function Navbar() {
+function Navbar({ currentUser, onLogout }) {
+  const isAdmin = currentUser?.role === "admin";
+
   return (
-    <header className="navbar">
-      <div className="navbar-inner">
-        {/* Custom logo: simple hexagon-like shape with initials JL */}
-        <Link to="/" className="logo">
-          <span className="logo-shape">JL</span>
-          <span className="logo-text">Jun-You Li Portfolio</span>
+    <nav className="navbar">
+      {/* Left: logo or site name */}
+      <div className="navbar-left">
+        <Link to="/" className="navbar-logo">
+          MyPortfolio
         </Link>
-
-        <nav className="nav-links">
-          <NavLink to="/" end>
-            Home
-          </NavLink>
-          <NavLink to="/about">About Me</NavLink>
-          <NavLink to="/projects">Projects</NavLink>
-          <NavLink to="/services">Services</NavLink>
-          <NavLink to="/contact">Contact</NavLink>
-        </nav>
       </div>
-    </header>
+
+      {/* Center: navigation links */}
+      <div className="navbar-center">
+        <NavLink to="/" className="nav-item">
+          Home
+        </NavLink>
+        <NavLink to="/about" className="nav-item">
+          About
+        </NavLink>
+        <NavLink to="/services" className="nav-item">
+          Services
+        </NavLink>
+        <NavLink to="/projects" className="nav-item">
+          Projects
+        </NavLink>
+        <NavLink to="/contact" className="nav-item">
+          Contact
+        </NavLink>
+      </div>
+
+      {/* Right: auth status */}
+      <div className="navbar-right">
+        {currentUser ? (
+          <>
+            <span className="nav-username">
+              {currentUser.name} ({isAdmin ? "admin" : "user"})
+            </span>
+            <button className="nav-button" onClick={onLogout}>
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <NavLink to="/signin" className="nav-item">
+              Sign In
+            </NavLink>
+            <NavLink to="/signup" className="nav-item">
+              Sign Up
+            </NavLink>
+          </>
+        )}
+      </div>
+    </nav>
   );
 }
 

@@ -1,5 +1,5 @@
 // models/user.model.js
-// Simple Mongoose model for users collection
+// User model with role field (user / admin)
 
 const mongoose = require("mongoose");
 
@@ -21,6 +21,12 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       minlength: 6,
+    },
+    // NEW: role field
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user", // all new accounts are normal users
     },
   },
   {

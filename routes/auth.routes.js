@@ -1,21 +1,29 @@
 // routes/auth.routes.js
-// Authentication routes: login, logout, current user
+// Authentication routes: signup, signin, signout, current user
 
 const express = require("express");
 const router = express.Router();
 
-const authMiddleware = require("../middleware/authMiddleware");
-const { login, logout, getCurrentUser } = require("../controllers/auth.controller");
+const { protect } = require("../middleware/authMiddleware");
+const {
+  signup,
+  signin,
+  signout,
+  getCurrentUser,
+} = require("../controllers/auth.controller");
 
 // Base path: /api/auth
 
-// Login and get JWT token
-router.post("/login", login);
+// User signup (register)
+router.post("/signup", signup);
 
-// Logout (client should delete token)
-router.post("/logout", logout);
+// Signin user (Assignment3: POST auth/signin)
+router.post("/signin", signin);
+
+// Signout user (Assignment3: GET auth/signout)
+router.get("/signout", signout);
 
 // Get current logged-in user (protected)
-router.get("/me", authMiddleware, getCurrentUser);
+router.get("/me", protect, getCurrentUser);
 
 module.exports = router;
