@@ -1,17 +1,18 @@
-# --- Root backend node modules & environment ---
+# dependencies
 node_modules/
+client/node_modules/
+
+# env files
 .env
+.env.*
+!.env.example
+
+# build output
+client/dist/
 dist/
+
+# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-
-# --- Frontend React client ---
-client/node_modules/
-client/dist/
-client/.env
-
-# --- OS / Editor junk ---
-.vscode/
-.DS_Store
-Thumbs.db
+pnpm-debug.log*
