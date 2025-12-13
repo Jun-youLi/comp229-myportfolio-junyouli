@@ -1,32 +1,40 @@
 // client/src/pages/Projects.jsx
-
-import React, { useEffect, useState } from "react";
+import { API_BASE } from "../apiBase";
+import React, { useEffect, useMemo, useState } from "react";
 
 function Projects({ currentUser, token, apiBase }) {
+  const baseUrl = useMemo(
+    () => (apiBase || API_BASE || "").replace(/\/$/, ""),
+    [apiBase]
+  );
+
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // Form state for admin to create a project
+  // Admin create form state
   const [title, setTitle] = useState("");
+  const [firstname, setFirstname] = useState("");
+  const [lastname, setLastname] = useState("");
+  const [email, setEmail] = useState("");
+  const [completion, setCompletion] = useState(100);
   const [description, setDescription] = useState("");
   const [link, setLink] = useState("");
 
   const isAdmin = currentUser?.role === "admin";
 
-  // Fetch all projects (public endpoint)
   const fetchProjects = async () => {
     try {
       setLoading(true);
       setMessage("");
 
-      const response = await fetch(`${apiBase}/projects`);
+      const response = await fetch(`${baseUrl}/api/projects`);
       const data = await response.json();
 
       if (!response.ok) {
         setMessage(data.message || "Failed to load projects");
       } else {
-        setProjects(data);
+        setProjects(Array.isArray(data) ? data : []);
       }
     } catch (error) {
       console.error("Fetch projects error:", error);
@@ -38,9 +46,9 @@ function Projects({ currentUser, token, apiBase }) {
 
   useEffect(() => {
     fetchProjects();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseUrl]);
 
-  // Admin: create a new project
   const handleCreateProject = async (event) => {
     event.preventDefault();
     setMessage("");
@@ -51,13 +59,21 @@ function Projects({ currentUser, token, apiBase }) {
     }
 
     try {
-      const response = await fetch(`${apiBase}/projects`, {
+      const response = await fetch(`${baseUrl}/api/projects`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ title, description, link }),
+        body: JSON.stringify({
+          title,
+          firstname,
+          lastname,
+          email,
+          completion,
+          description,
+          link,
+        }),
       });
 
       const data = await response.json();
@@ -69,9 +85,12 @@ function Projects({ currentUser, token, apiBase }) {
 
       setMessage("Project created successfully");
       setTitle("");
+      setFirstname("");
+      setLastname("");
+      setEmail("");
+      setCompletion(100);
       setDescription("");
       setLink("");
-      // Reload list after creating a project
       fetchProjects();
     } catch (error) {
       console.error("Create project error:", error);
@@ -86,12 +105,20 @@ function Projects({ currentUser, token, apiBase }) {
       {loading && <p>Loading projects...</p>}
       {message && <p className="projects-message">{message}</p>}
 
-      {/* Project list */}
       <ul className="projects-list">
         {projects.map((project) => (
           <li key={project._id} className="project-card">
             <h3>{project.title}</h3>
-            <p>{project.description}</p>
+            {project.description && <p>{project.description}</p>}
+            {project.completion !== undefined && project.completion !== null && (
+              <p>Completion: {project.completion}%</p>
+            )}
+            {(project.firstname || project.lastname || project.email) && (
+              <p>
+                {project.firstname} {project.lastname}
+                {project.email ? ` (${project.email})` : ""}
+              </p>
+            )}
             {project.link && (
               <a href={project.link} target="_blank" rel="noreferrer">
                 View Project
@@ -101,7 +128,6 @@ function Projects({ currentUser, token, apiBase }) {
         ))}
       </ul>
 
-      {/* Only admin can see the create form */}
       {isAdmin && (
         <div className="project-admin-section">
           <h3>Create New Project (Admin Only)</h3>
@@ -112,6 +138,48 @@ function Projects({ currentUser, token, apiBase }) {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              First Name
+              <input
+                type="text"
+                value={firstname}
+                onChange={(e) => setFirstname(e.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Last Name
+              <input
+                type="text"
+                value={lastname}
+                onChange={(e) => setLastname(e.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Email
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </label>
+
+            <label>
+              Completion (%)
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={completion}
+                onChange={(e) => setCompletion(Number(e.target.value))}
                 required
               />
             </label>

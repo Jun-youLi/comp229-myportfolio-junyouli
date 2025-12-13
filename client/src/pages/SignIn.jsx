@@ -1,5 +1,5 @@
 // client/src/pages/SignIn.jsx
-
+import { API_BASE } from "../apiBase";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -14,27 +14,40 @@ function SignIn({ apiBase, onLogin }) {
     event.preventDefault();
     setMessage("");
 
+    const baseUrl = (apiBase || API_BASE || "").replace(/\/$/, "");
+
     try {
-      const response = await fetch(`${apiBase}/auth/signin`, {
+      const response = await fetch(`${baseUrl}/api/auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
 
       if (!response.ok) {
         setMessage(data.message || "Signin failed");
         return;
       }
 
-      // Save user and token in the parent component
-      onLogin(data.user, data.token);
+      const token = data.token || data.accessToken || data.jwt;
+      const user = data.user || data;
+
+      if (!token) {
+        setMessage("Signin succeeded but no token returned from server.");
+        return;
+      }
+
+      if (typeof onLogin === "function") {
+        onLogin(user, token);
+      }
 
       setMessage("Signin successful");
-      // Redirect after login
       navigate("/");
     } catch (error) {
       console.error("Signin error:", error);

@@ -13,5 +13,6 @@ function Footer() {
     </footer>
   );
 }
+<p>CI/CD Demo: 2025-12-12</p>
 
 export default Footer;

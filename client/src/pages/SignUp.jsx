@@ -1,5 +1,5 @@
 // client/src/pages/SignUp.jsx
-
+import { API_BASE } from "../apiBase";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -15,24 +15,44 @@ function SignUp({ apiBase, onLogin }) {
     event.preventDefault();
     setMessage("");
 
+    const baseUrl = (apiBase || API_BASE || "").replace(/\/$/, "");
+
+    // Make signup compatible with backends that want firstname/lastname
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    const firstname = parts[0] || name.trim();
+    const lastname = parts.slice(1).join(" ") || "User";
+
     try {
-      const response = await fetch(`${apiBase}/auth/signup`, {
+      const response = await fetch(`${baseUrl}/api/auth/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, email, password }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          firstname,
+          lastname,
+        }),
       });
 
-      const data = await response.json();
+      let data = {};
+      try {
+        data = await response.json();
+      } catch {
+        data = {};
+      }
 
       if (!response.ok) {
         setMessage(data.message || "Signup failed");
         return;
       }
 
-      // Treat signup as a login: save user and token
-      onLogin(data.user, data.token);
+      const token = data.token || data.accessToken || data.jwt;
+      const user = data.user || data;
+
+      if (token && typeof onLogin === "function") {
+        onLogin(user, token);
+      }
 
       setMessage("Signup successful");
       navigate("/");
